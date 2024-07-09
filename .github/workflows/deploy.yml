@@ -15,8 +15,8 @@ jobs:
         run: |
           npm install
           npm run build
-        env:
-          GH_TOKEN: ${{ secrets.REACT_APP_ISSUES_TOKEN }}
+        # env:
+        # GH_TOKEN: ${{ secrets.REACT_APP_ISSUES_TOKEN }}
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.0
