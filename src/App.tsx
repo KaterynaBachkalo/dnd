@@ -1,79 +1,155 @@
 import React, { useState, DragEvent } from "react";
 import "./App.css";
 
+interface IBoard {
+  id: number;
+  title: string;
+  items: ICard[];
+}
+
 interface ICard {
   id: number;
-  order: number;
-  text: string;
+  title: string;
 }
 
 function App() {
-  const [cardList, setCardList] = useState<ICard[]>([
-    { id: 1, order: 1, text: "Card 1" },
-    { id: 2, order: 2, text: "Card 2" },
-    { id: 3, order: 3, text: "Card 3" },
-    { id: 4, order: 4, text: "Card 4" },
+  const [boards, setBoards] = useState<IBoard[]>([
+    {
+      id: 1,
+      title: "Зробити",
+      items: [
+        { id: 1, title: "Піти в магазин" },
+        { id: 2, title: "Викинути сміття" },
+        { id: 3, title: "Поїсти" },
+      ],
+    },
+    {
+      id: 2,
+      title: "Перевірити",
+      items: [
+        { id: 4, title: "Код рев'ю" },
+        { id: 5, title: "Задача" },
+        { id: 6, title: "Інші задачі" },
+      ],
+    },
+    {
+      id: 3,
+      title: "Зроблено",
+      items: [
+        { id: 7, title: "Зняти відео" },
+        { id: 8, title: "Змонтувати" },
+        { id: 9, title: "Відрендерити" },
+      ],
+    },
   ]);
 
-  const [currentCard, setCurrentCard] = useState<ICard | null>(null);
+  const [currentBoard, setCurrentBoard] = useState<IBoard | null>(null);
+  const [currentItem, setCurrentItem] = useState<ICard | null>(null);
 
-  const dragStartHandler = (e: DragEvent<HTMLDivElement>, card: ICard) => {
-    setCurrentCard(card);
-    console.log("dragStart", card, currentCard);
+  const dragStartHandler = (
+    e: DragEvent<HTMLDivElement>,
+    board: IBoard,
+    item: ICard
+  ) => {
+    setCurrentBoard(board);
+    setCurrentItem(item);
   };
 
   const dragEndHandler = (e: DragEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
-    target.style.background = "white";
-    console.log("dragEnd", currentCard);
+    target.style.boxShadow = "none";
+  };
+
+  const dragLeaveHandler = (e: DragEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    target.style.boxShadow = "none";
   };
 
   const dragOverHandler = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const target = e.target as HTMLDivElement;
-    target.style.background = "lightgray";
+
+    if (target.className === "item") {
+      target.style.boxShadow = "0 4px 3px gray";
+    }
   };
 
-  const dropHandler = (e: DragEvent<HTMLDivElement>, card: ICard) => {
+  const dropHandler = (
+    e: DragEvent<HTMLDivElement>,
+    board: IBoard,
+    item: ICard
+  ) => {
     e.preventDefault();
-    setCardList(
-      cardList.map((c) => {
-        if (c.id === card.id && currentCard) {
-          return { ...c, order: currentCard.order };
+    if (!currentItem || !currentBoard) {
+      return;
+    }
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+
+    const dropIndex = board.items.indexOf(item);
+    board.items.splice(dropIndex + 1, 0, currentItem);
+
+    setBoards(
+      boards.map((b) => {
+        if (b.id === board.id) {
+          return board;
         }
-        if (currentCard && c.id === currentCard.id) {
-          return { ...c, order: card.order };
+        if (b.id === currentBoard.id) {
+          return currentBoard;
         }
-        return c;
+        return b;
       })
     );
-    const target = e.target as HTMLDivElement;
-    target.style.background = "white";
-    console.log("dropHandler", card, currentCard);
   };
 
-  const sortCards = (a: ICard, b: any) => {
-    if (a.order > b.order) {
-      return 1;
-    } else {
-      return -1;
+  const dropCardHandler = (e: DragEvent<HTMLDivElement>, board: IBoard) => {
+    e.preventDefault();
+    if (!currentItem || !currentBoard) {
+      return;
     }
+    board.items.push(currentItem);
+    const currentIndex = currentBoard.items.indexOf(currentItem);
+    currentBoard.items.splice(currentIndex, 1);
+
+    setBoards(
+      boards.map((b) => {
+        if (b.id === board.id) {
+          return board;
+        }
+        if (b.id === currentBoard.id) {
+          return currentBoard;
+        }
+        return b;
+      })
+    );
   };
 
   return (
     <div className="app">
-      {cardList.sort(sortCards).map((card) => (
+      {boards.map((board) => (
         <div
-          className={"card"}
-          key={card.id}
-          draggable={true}
-          onDragStart={(e) => dragStartHandler(e, card)}
-          onDragLeave={(e) => dragEndHandler(e)}
-          onDragEnd={(e) => dragEndHandler(e)}
+          className={"board"}
+          key={board.id}
           onDragOver={(e) => dragOverHandler(e)}
-          onDrop={(e) => dropHandler(e, card)}
+          onDrop={(e) => dropCardHandler(e, board)}
         >
-          {card.text}
+          <div className={"board-title"} key={board.id}>
+            {board.title}
+          </div>
+          {board.items.map((item) => (
+            <div
+              className={"item"}
+              key={item.id}
+              draggable={true}
+              onDragOver={(e) => dragOverHandler(e)}
+              onDragLeave={(e) => dragLeaveHandler(e)}
+              onDragStart={(e) => dragStartHandler(e, board, item)}
+              onDragEnd={(e) => dragEndHandler(e)}
+              onDrop={(e) => dropHandler(e, board, item)}
+            >
+              {item.title}
+            </div>
+          ))}
         </div>
       ))}
     </div>
